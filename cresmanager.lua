@@ -11,7 +11,11 @@ local R = {
 	animations = {},
 	images = {},
 	sounds = {},
-	tracks = {}
+	tracks = {},
+
+	baseImagesDirectory = "res/images/",
+	baseSoundDirectory = "res/sounds/",
+	baseMusicDirectory = "res/music/"
 }
 
 R:getTypeRoot = function (type)
@@ -27,6 +31,7 @@ end
 
 --Object definition
 
+-- TODO add a possibility to add a whole collection of type at aonce
 R:add = function (name, object, type)
 	local root = nil
 	if not _c.isDefined(type) and
