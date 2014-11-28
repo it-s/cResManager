@@ -1,11 +1,16 @@
+local _c = require "lib.tlc.tlc-min"
 local module = {
 	type = "image"
 }
 
-module:new = function(name, baseImagesDirectory)
-	local res = display.newImage( baseImagesDirectory .. name)
+module:new = function(name, location, options)
+	local res = display.newImage( location .. name )
 	res.type = module.type
 	res.transition = nil
+
+	function res:getType()
+		return self.type
+	end
 
 	function res:removeEventListeners()
 		self._functionListeners = nil

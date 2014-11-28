@@ -1,4 +1,7 @@
 local _c = require "lib.tlc.tlc-min"
+_c.isDestructable = function(obj)
+	return _c.isTable(obj) and _c.tableHasKey(obj, "destroy")
+end
 
 local R = {
 	_store = {},
@@ -18,8 +21,13 @@ local R = {
 	baseMusicDirectory = "res/music/"
 }
 
+R:options = function (options)
+	if _c.isNil(options) or not _c.isObject(options) then return error("Options is Nil, or not a table") end
+	_c.tableExtend(self, options)
+end
+
 R:getTypeRoot = function (type)
-	if not _c.isDefined(type) then
+	if _c.isNil(type) then
 		type = R.TYPE_GENERIC
 	end
 	if type == self.TYPE_GENERIC then
@@ -31,18 +39,30 @@ end
 
 --Object definition
 
--- TODO add a possibility to add a whole collection of type at aonce
-R:add = function (name, object, type)
+-- add ( objectList, type )
+-- add ( name, object, type )
+R:add = function ( ... )
 	local root = nil
-	if not _c.isDefined(type) and
-		_c.tableHasKey(object, "type") then
-		type = object.type
-	else
-		type = self.TYPE_GENERIC
-	end
-	root = self:getTypeRoot(type)
+	local name = nil
+	local object = nil
+	local type = nil
 
-	root[name] = object
+	if #arg == 2 then
+		object 	= arg[1]
+		type 	= arg[2]
+		root 	= self:getTypeRoot(type)
+		root 	= object
+		return true
+	elseif #arg == 3 then
+		name 	= arg[1]
+		object 	= arg[2]
+		type 	= arg[3]
+		root 	= self:getTypeRoot(type)
+		if _c.tableHasKey(root, name) then return error( "Resource " .. name .. " of type " .. type .. " is already defined." ) end
+		root[name] = object
+		return true
+	end	
+	return false
 end
 
 R:has = function (name, type)
@@ -84,26 +104,7 @@ R:getStore = function (namespace)
 	return self._store[namespace]
 end
 
-
--- Object lifecycle
-
-R:init = function(name, type, namespace)
-	local store = self:getStore(namespace)
-	local object = self:get(name, type)
-	return store[name] = object()
-end
-
-R:existis = function(name, namespace)
-	local store = self:getStore(namespace)
-	return _c.tableHasKey(store, name)
-end
-
-R:_ = function (name, namespace)
-	local store = self:getStore(namespace)
-	return store[name]
-end
-
-R:empty = function ( namespace )
+R:emptyStore = function ( namespace )
 	local store = self:getStore(namespace)
 	local iterator = _c.Iterator(store)
 	while (iterator.hasNext) do
@@ -115,10 +116,50 @@ R:empty = function ( namespace )
 	store = {}
 end
 
-R:destroy = function ( namespace )
+
+-- Object lifecycle
+
+R:init = function(name, type, namespace)
 	local store = self:getStore(namespace)
-	self:empty(namespace)
-	store = nil
+	local object = self:get(name, type)
+	local instance = object()
+	instance._id = _c.increment(#store)
+	instance._name = name
+	table.insert(store, instance)
+	return instance
+end
+
+-- R:existis = function(name, namespace)
+-- 	local store = self:getStore(namespace)
+-- 	return _c.tableHasKey(store, name)
+-- end
+
+-- R:_ = function (name, namespace)
+-- 	local store = nil
+-- 	if self:existis(name, namespace) then
+-- 		store = self:getStore(namespace)
+-- 		return store[name]
+-- 	else
+-- 		return error( "Object [" .. name .."] is not found at namespace " .. namespace .."." )
+-- 	end
+-- end
+
+-- destroy(object)
+-- destroy(namespace)
+R:destroy = function ( var )
+	if _c.isTable(var) then
+		local id = var._id
+		if _c.isDestructable(var) then
+			var:destroy()
+		end		
+		table.remove( id ) = nil
+	elseif _c.isString(var) then
+		local store = self:getStore(var)
+		self:emptyStore(var)
+		store = nil
+		return true
+	end
+	return false
 end
 
 return R
