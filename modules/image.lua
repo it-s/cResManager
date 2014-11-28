@@ -1,4 +1,3 @@
-local _c = require "lib.tlc.tlc-min"
 local module = {
 	type = "image"
 }
