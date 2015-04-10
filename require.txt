@@ -1,4 +1,0 @@
-This library depends on my "Tiny-LUA-Collection"
-available at: git@github.com:it-s/Tiny-LUA-Collection.git
-Place is as a submodule, or a direct download into
-./lib/tlc
